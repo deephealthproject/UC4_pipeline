@@ -155,7 +155,7 @@ def main():
             eddl.forward(net, [x])
             output = eddl.getOutput(out_sigm)
             iou = iou_evaluator.BinaryIoU(np.array(output), np.array(y), thresh=thresh)
-            loss = 1 - loss_evaluator.DiceCoefficient(np.array(output), np.array(y), thresh=thresh)
+            loss = loss_evaluator.DiceCoefficient(np.array(output), np.array(y), thresh=thresh)
             print("- Batch IoU: %.6g " % iou, end="", flush=True)
             print("- Batch loss: %.6g " % loss, end="", flush=True)
             print()
