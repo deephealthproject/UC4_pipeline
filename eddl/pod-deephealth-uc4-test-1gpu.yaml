@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: deephealth-uc4-test
+spec:
+ restartPolicy: Never
+ containers:
+ - name: deephealth-uc4
+   image: riccardorenzulli/deephealth-uc4:cudnn
+   command: ["bash", "-c"]
+   args: ["cd deephealth-uc4-pyecvl/; python3 test_model.py --dataset ../data/dataset_molinette20210418/dataset_molinette.yml --ckpts dh-uc4_epoch_9_miou_0.5729870192432407.bin --wb_run_path eidoslab/deephealth-uc4/lpl04axj --batch-size 4 --gpu 1 --num_workers 1 --queue_ratio_size 4"]
+   volumeMounts:
+          - name: download
+            mountPath: /data
+   env:
+    - name: WANDB_BASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: perlo-wandb-auth
+          key: host
+    - name: WANDB_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: perlo-wandb-auth
+          key: key
+   resources:
+     limits:
+       nvidia.com/gpu: 1
+     requests:
+       nvidia.com/gpu: 1
+ volumes:
+      - name: download
+        persistentVolumeClaim:
+          claimName: deephealth-uc4
