@@ -8,7 +8,7 @@ spec:
  - name: deephealth-uc4
    image: riccardorenzulli/deephealth-uc4:cudnn
    command: ["bash", "-c"]
-   args: ["cd deephealth-uc4-pyecvl/; python3 train_model.py --dataset ../data/dataset_molinette20210418/dataset_molinette.yml --epochs 10 --batch-size 3 --gpu 1 --num_workers 1 --queue_ratio_size 4"]
+   args: ["cd deephealth-uc4-pyecvl/; python3 train_model.py --dataset /data/dataset_molinette20210418/dataset_molinette.yml --epochs 100 --batch-size 3 --gpu 1 --num_workers 1 --queue_ratio_size 4"]
    volumeMounts:
           - name: download
             mountPath: /data

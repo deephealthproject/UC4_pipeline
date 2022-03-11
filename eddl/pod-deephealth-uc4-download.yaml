@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
- name: deephealth-uc4-training-4gpu
+ name: deephealth-uc4-download-pod
 spec:
  restartPolicy: Never
  containers:
  - name: deephealth-uc4
    image: riccardorenzulli/deephealth-uc4:cudnn
    command: ["bash", "-c"]
-   args: ["cd deephealth-uc4-pyecvl/; python3 train_model.py --dataset /data/unitochest_eddl/dataset_molinette.yml --epochs 200 --batch-size 12 --gpu 1 1 1 1 --num_workers 4 --queue_ratio_size 16"]
+   args: ["cd deephealth-uc4-pyecvl/; python3 download_dataset.py"]
    volumeMounts:
           - name: download
             mountPath: /data
@@ -25,9 +25,9 @@ spec:
           key: key
    resources:
      limits:
-       nvidia.com/gpu: 4
+       nvidia.com/gpu: 1
      requests:
-       nvidia.com/gpu: 4
+       nvidia.com/gpu: 1
  volumes:
       - name: download
         persistentVolumeClaim:

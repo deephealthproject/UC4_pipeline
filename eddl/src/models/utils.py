@@ -9,20 +9,42 @@ class Evaluator:
         self.buf = []
 
     def BinaryIoU(self, a, b, thresh=0.5):
-        intersection = np.logical_and(a > thresh, b > thresh).sum()
-        union = np.logical_or(a > thresh, b > thresh).sum()
-        rval = (intersection + self.eps) / (union + self.eps)
+        batch_size = a.shape[0]
+        a = a.reshape(batch_size, -1)
+        b = b.reshape(batch_size, -1)
+        intersection = np.logical_and(a > thresh, b > thresh).sum(1)
+        union = np.logical_or(a > thresh, b > thresh).sum(1)
+        rval = ((intersection + self.eps) / (union + self.eps)).mean()
         self.buf.append(rval)
         return rval
 
-    def DiceCoefficient(self, a, b, thresh=0.5):
-        a = Threshold(a, thresh)
-        b = Threshold(b, thresh)
-        intersection = np.logical_and(a, b).sum()
-        rval = (2 * intersection + self.eps) / (a.sum() + b.sum() + self.eps)
+    def DiceCoefficient(self, a, b, smooth=1, thresh=0.5):
+        batch_size = a.shape[0]
+        if thresh:
+            a = Threshold(a, thresh)
+            b = Threshold(b, thresh)
+        a = a.reshape(batch_size, -1)
+        b = b.reshape(batch_size, -1)
+        
+        intersection = (a * b).sum(1)
+        dice = ((2.*intersection + smooth)/(a.sum(1) + b.sum(1) + smooth)).mean()
+        self.buf.append(dice)  
+        return dice
 
-        self.buf.append(rval)
-        return rval
+    def DiceLoss(self, a, b, smooth=1, thresh=None):
+        batch_size = a.shape[0]
+        if thresh:
+            a = Threshold(a, thresh)
+            b = Threshold(b, thresh)
+        a = a.reshape(batch_size, -1)
+        b = b.reshape(batch_size, -1)
+        
+        intersection = (a * b).sum(1)
+        dice = ((2.*intersection + smooth)/(a.sum(1) + b.sum(1) + smooth)).mean()
+        dice = 1 - dice
+        self.buf.append(dice)  
+        return dice
+
     def BinaryCrossEntropy(self, y, y_pred):
         # each example is associated with a single class; sum the negative log
         # probability of the correct label over all samples in the batch.
@@ -32,13 +54,10 @@ class Evaluator:
         self.buf.append(rval)
         return rval
 
-    def MIoU(self):
+    def MeanMetric(self):
         if not self.buf:
             return 0
         return sum(self.buf) / len(self.buf)
-
-    MeanMetric = MIoU
-
 
 def Threshold(a, thresh=0.5):
     a[a > thresh] = 1
