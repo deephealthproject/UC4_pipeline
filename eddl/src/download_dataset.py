@@ -2,8 +2,8 @@ import gdown
 import zipfile
 
 # a file
-url = "https://drive.google.com/uc?id=1VY3ZeBlQH4sqHt_QiAfxJ9EMkgJLZCmc"
-output = "/data/unitochest_eddl.zip"
+url = "https://drive.google.com/uc?id=1xmphlKvAD-wbLY1La72YlEG1wWyaDIy0"
+output = "/data/unitochest_eddl_fulltest.zip"
 output_folder = "/data/"
 gdown.download(url, output, quiet=False)
 

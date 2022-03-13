@@ -95,8 +95,7 @@ def main(args):
                        ctype=ecvl.ColorType.GRAY, 
                        ctype_gt=ecvl.ColorType.GRAY, 
                        num_workers=num_workers,
-                       queue_ratio_size=queue_ratio_size,
-                       drop_last=[True, False, False])
+                       queue_ratio_size=queue_ratio_size)
     x = Tensor([args.batch_size, d.n_channels_, size[0], size[1]])
     y = Tensor([args.batch_size, d.n_channels_gt_, size[0], size[1]])
     
