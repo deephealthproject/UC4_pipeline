@@ -31,11 +31,8 @@ class Evaluator:
         self.buf.append(dice)  
         return dice
 
-    def DiceLoss(self, a, b, smooth=1, thresh=None):
+    def DiceLoss(self, a, b, smooth=1):
         batch_size = a.shape[0]
-        if thresh:
-            a = Threshold(a, thresh)
-            b = Threshold(b, thresh)
         a = a.reshape(batch_size, -1)
         b = b.reshape(batch_size, -1)
         

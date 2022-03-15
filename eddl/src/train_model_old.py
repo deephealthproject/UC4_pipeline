@@ -27,6 +27,9 @@ def main(args):
     num_workers = args.num_workers
     queue_ratio_size = args.queue_ratio_size
     num_classes = 1
+    #loss_f = "binary_cross_entropy"
+    loss_f = "dice"
+    metric_f = "dice"
     training_time = 0
     tot_training_time = 0
     size = [args.shape, args.shape]  # size of images
@@ -52,8 +55,8 @@ def main(args):
     eddl.build(
         net,
         eddl.adam(0.0001),
-        ["dice"],
-        ["dice"],
+        [loss_f],
+        [metric_f],
         eddl.CS_GPU(args.gpu, mem=args.mem) if args.gpu else eddl.CS_CPU(mem=args.mem)
     )
     eddl.summary(net)
@@ -92,9 +95,10 @@ def main(args):
                        args.batch_size, 
                        dataset_augs, 
                        ctype=ecvl.ColorType.GRAY, 
-                       ctype_gt=ecvl.ColorType.GRAY, 
+                       ctype_gt=ecvl.ColorType.GRAY,
                        num_workers=num_workers,
-                       queue_ratio_size=queue_ratio_size)
+                       queue_ratio_size=queue_ratio_size,
+                       drop_last=[True, False, False])
     x = Tensor([args.batch_size, d.n_channels_, size[0], size[1]])
     y = Tensor([args.batch_size, d.n_channels_gt_, size[0], size[1]])
     num_samples_train = len(d.GetSplit())
@@ -109,23 +113,20 @@ def main(args):
 
     iou_evaluator = utils.Evaluator()
     print("Starting training")
+    #eddl.set_mode(net, 1)
     for e in range(args.epochs):
         # TRAINING
         print("Epoch {:d}/{:d} - Training".format(e, args.epochs),
               flush=True)
         d.SetSplit(ecvl.SplitType.training)
-        eddl.reset_loss(net)
-        s = d.GetSplit()
-        random.shuffle(s)
-        #d.split_.training_ = s
-        d.ResetAllBatches(shuffle=True)
+        d.ResetBatch(ecvl.SplitType.training, shuffle=True)
         start_time = time.time()
         # Spawn the threads
         d.Start()
-        eddl.set_mode(net, 1)
+        eddl.reset_loss(net)
         for i, b in enumerate(range(num_batches_train)):
             #d.LoadBatch(x, y)
-            samples, x, y = d.GetBatch()
+            _, x, y = d.GetBatch()
             tx, ty = [x], [y]
             eddl.train_batch(net, tx, ty, indices)
             if i % args.log_interval == 0:
@@ -158,15 +159,18 @@ def main(args):
         dice_evaluator.ResetEval()
         print("Epoch %d/%d - Evaluation" % (e, args.epochs), flush=True)
         start_time = time.time()
+
         eddl.set_mode(net, 0)
         d.Start()
         for b in range(num_batches_validation):
             print("Epoch {:d}/{:d} (batch {:d}/{:d}) ".format(
                 e, args.epochs, b + 1, num_batches_validation
             ), end="", flush=True)
-            samples, x, y = d.GetBatch()
+            x, y = d.GetBatch()
+            #eddl.eval_batch(net,[x],[y])
+            #output = eddl.getOutput(net.lout[0])
             eddl.forward(net, [x])
-            output = eddl.getOutput(out_sigm)
+            output = eddl.getOutput(out)
             iou = iou_evaluator.BinaryIoU(np.array(output), np.array(y), thresh=thresh)
             loss = loss_evaluator.DiceLoss(np.array(output), np.array(y))
             dice = dice_evaluator.DiceCoefficient(np.array(output), np.array(y), thresh=thresh)
@@ -180,14 +184,13 @@ def main(args):
         mloss = loss_evaluator.MeanMetric()
         validation_time = time.time() - start_time
         print("Val IoU: %.6g" % miou)
-        print("Val dice: %.6g" % mdice)
+        print("Val dice: %.6g" % dice)
         print("Val loss: %.6g" % mloss)
         wandb.log({"validation-loss": mloss}, commit=False)
         wandb.log({"validation-dice": dice}, commit=False)
         wandb.log({"validation-iou": miou}, commit=False)
         wandb.log({"validation-time": validation_time}, commit=False)
         print("---Validation takes %s seconds ---" % validation_time)
-        print("---Validation inference (per image) takes %s seconds ---" % validation_time/num_batches_validation/args.batch_size)
         
         if miou > miou_best:
             print("Saving weights")
@@ -197,52 +200,54 @@ def main(args):
             wandb.save(os.path.join(wandb.run.dir, "*.bin"))
             miou_best = miou
 
-        # Test
-        print("Starting testing")
-        d.SetSplit(ecvl.SplitType.test)
-        # Reset current split without shuffling
-        d.ResetBatch(d.current_split_, False)
-        iou_evaluator.ResetEval()
-        loss_evaluator = utils.Evaluator()
-        loss_evaluator.ResetEval()
-        dice_evaluator = utils.Evaluator()
-        dice_evaluator.ResetEval()
-        print("Epoch %d/%d - Test" % (e, args.epochs), flush=True)
-        start_time = time.time()
-        eddl.set_mode(net, 0)
-        d.Start()
-        for b in range(num_batches_test):
-            print("Epoch {:d}/{:d} (batch {:d}/{:d}) ".format(
-                e, args.epochs, b + 1, num_batches_test
-            ), end="", flush=True)
-            samples, x, y = d.GetBatch()
-            eddl.forward(net, [x])
-            output = eddl.getOutput(out_sigm)
-            iou = iou_evaluator.BinaryIoU(np.array(output), np.array(y), thresh=thresh)
-            loss = loss_evaluator.DiceLoss(np.array(output), np.array(y))
-            dice = dice_evaluator.DiceCoefficient(np.array(output), np.array(y), thresh=thresh)
-            print("- Batch IoU: %.6g " % iou, end="", flush=True)
-            print("- Batch dice: %.6g " % dice, end="", flush=True)
-            print("- Batch loss: %.6g " % loss, end="", flush=True)
-            print()
-        d.Stop()
-        miou = iou_evaluator.MeanMetric()
-        mdice = dice_evaluator.MeanMetric()
-        mloss = loss_evaluator.MeanMetric()
-        validation_time = time.time() - start_time
-        print("Test IoU: %.6g" % miou)
-        print("Test dice: %.6g" % mdice)
-        print("Test loss: %.6g" % mloss)
-        wandb.log({"test-loss": mloss}, commit=False)
-        wandb.log({"test-dice": mdice}, commit=False)
-        wandb.log({"test-iou": miou}, commit=False)
-        wandb.log({"test-time": validation_time}, commit=True)
-        print("---Testing takes %s seconds ---" % validation_time)
-        print("---Testing inference (per image) takes %s seconds ---" % validation_time/num_batches_test/args.batch_size)
+        # # Test
+        # print("Starting testing")
+        # d.SetSplit(ecvl.SplitType.test)
+        # # Reset current split without shuffling
+        # d.ResetBatch(d.current_split_, False)
+        # iou_evaluator.ResetEval()
+        # loss_evaluator = utils.Evaluator()
+        # loss_evaluator.ResetEval()
+        # dice_evaluator = utils.Evaluator()
+        # dice_evaluator.ResetEval()
+        # print("Epoch %d/%d - Test" % (e, args.epochs), flush=True)
+        # start_time = time.time()
+        # d.Start()
+        # eddl.set_mode(net, 0)
+        # for b in range(num_batches_test):
+        #     print("Epoch {:d}/{:d} (batch {:d}/{:d}) ".format(
+        #         e, args.epochs, b + 1, num_batches_test
+        #     ), end="", flush=True)
+        #     samples, x, y = d.GetBatch()
+        #     eddl.forward(net, [x])
+        #     output = eddl.getOutput(out_sigm)
+        #     iou = iou_evaluator.BinaryIoU(np.array(output), np.array(y), thresh=thresh)
+        #     loss = loss_evaluator.DiceLoss(np.array(output), np.array(y))
+        #     dice = dice_evaluator.DiceCoefficient(np.array(output), np.array(y), thresh=thresh)
+        #     print("- Batch IoU: %.6g " % iou, end="", flush=True)
+        #     print("- Batch dice: %.6g " % dice, end="", flush=True)
+        #     print("- Batch loss: %.6g " % loss, end="", flush=True)
+        #     print()
+        # d.Stop()
+        # miou = iou_evaluator.MeanMetric()
+        # mdice = dice_evaluator.MeanMetric()
+        # mloss = loss_evaluator.MeanMetric()
+        # validation_time = time.time() - start_time
+        # print("Test IoU: %.6g" % miou)
+        # print("Test dice: %.6g" % mdice)
+        # print("Test loss: %.6g" % mloss)
+        # wandb.log({"test-loss": mloss}, commit=False)
+        # wandb.log({"test-dice": mdice}, commit=False)
+        # wandb.log({"test-iou": miou}, commit=False)
+        # wandb.log({"test-time": validation_time}, commit=True)
+        # print("---Testing takes %s seconds ---" % validation_time)
     wandb.log({"total-training-time": tot_training_time, "average-training-time": tot_training_time/args.epochs})
 
 
-#python3 train_model.py ../data/processed/dataset_molinette20210418/dataset_molinette.yml --epochs 100 --batch_size 8 --runs-dir ../runs/dataset_molinette20210418/UNet/ --gpu 0 1 0 0
+#python3 train_model.py ../data/processed/dataset_molinette20210418/dataset_molinette.yml --epochs 100 --batch-size 8 --runs-dir ../runs/dataset_molinette20210418/UNet/ --gpu 0 1 0 0
+#riccardo@latitude-5300:~/projects/UC4_pipeline$ sudo docker build  -t riccardorenzulli/deephealth-uc4:cudnn .
+#sudo docker push riccardorenzulli/deephealth-uc4:cudnn
+#kubectl apply -f eddl/pod-deephealth-uc4-training-4gpu.yaml
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", metavar="INPUT_DATASET", default=None)

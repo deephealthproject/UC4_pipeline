@@ -265,7 +265,7 @@ def UNet(x, num_classes):
     x = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x, depth, [3, 3], [1, 1], "same"), True))
 
     # final conv
-    x = eddl.Sigmoid(eddl.Conv(x, num_classes, [1, 1]))
+    x = eddl.Conv(x, num_classes, [1, 1])
     return x
 
 def UNet_old(x, num_classes):
