@@ -265,7 +265,7 @@ def UNet(x, num_classes):
     x = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x, depth, [3, 3], [1, 1], "same"), True))
 
     # final conv
-    x = eddl.Conv(x, num_classes, [1, 1])
+    x = eddl.Sigmoid(eddl.Conv(x, num_classes, [1, 1]))
     return x
 
 def UNet_old(x, num_classes):
@@ -354,3 +354,53 @@ def Nabla(x, num_classes):
     #x = eddl.Sigmoid(x)
 
     return x
+
+def UNet_UC3(x, num_classes):
+    depth = 64
+
+    # encoder
+    x = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x, depth, [3, 3], [1, 1], "same"), True))
+    x = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x, depth, [3, 3], [1, 1], "same"), True))
+    x2 = eddl.MaxPool(x, [2, 2], [2, 2])#eddl.MaxPool(x, [2, 2], [2, 2])#
+    x2 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x2, 2*depth, [3, 3], [1, 1], "same"), True))
+    x2 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x2, 2*depth, [3, 3], [1, 1], "same"), True))
+    x3 = eddl.MaxPool(x2, [2, 2], [2, 2])#eddl.MaxPool(x2, [2, 2], [2, 2])#
+    x3 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x3, 4*depth, [3, 3], [1, 1], "same"), True))
+    x3 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x3, 4*depth, [3, 3], [1, 1], "same"), True))
+    x4 = eddl.MaxPool(x3, [2, 2], [2, 2])#eddl.MaxPool(x3, [2, 2], [2, 2])#
+    x4 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x4, 8*depth, [3, 3], [1, 1], "same"), True))
+    x4 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x4, 8*depth, [3, 3], [1, 1], "same"), True))
+    x5 = eddl.MaxPool(x4, [2, 2], [2, 2])#eddl.MaxPool(x4, [2, 2], [2, 2])#
+
+    # middle conv
+    x5 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x5, 16*depth, [3, 3], [1, 1], "same"), True))
+    x5 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x5, 16*depth, [3, 3], [1, 1], "same"), True))
+
+    # decoder
+    x5 = eddl.Conv(
+        eddl.UpSampling(x5, [2, 2]), 8*depth, [2, 2], [1, 1], "same"
+    )
+    x4 = eddl.Concat([x4, x5])
+    x4 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x4, 8*depth, [3, 3], [1, 1], "same"), True))
+    x4 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x4, 8*depth, [3, 3], [1, 1], "same"), True))
+    x4 = eddl.Conv(
+        eddl.UpSampling(x4, [2, 2]), 4*depth, [2, 2], [1, 1], "same"
+    )
+    x3 = eddl.Concat([x3, x4])
+    x3 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x3, 4*depth, [3, 3], [1, 1], "same"), True))
+    x3 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x3, 4*depth, [3, 3], [1, 1], "same"), True))
+    x3 = eddl.Conv(
+        eddl.UpSampling(x3, [2, 2]), 2*depth, [2, 2], [1, 1], "same"
+    )
+    x2 = eddl.Concat([x2, x3])
+    x2 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x2, 2*depth, [3, 3], [1, 1], "same"), True))
+    x2 = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x2, 2*depth, [3, 3], [1, 1], "same"), True))
+    x2 = eddl.Conv(
+        eddl.UpSampling(x2, [2, 2]), depth, [2, 2], [1, 1], "same"
+    )
+    x = eddl.Concat([x, x2])
+    x = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x, depth, [3, 3], [1, 1], "same"), True))
+    x = eddl.ReLu(eddl.BatchNormalization(eddl.Conv(x, depth, [3, 3], [1, 1], "same"), True))
+
+     # final conv
+    x = eddl.Sigmoid(eddl.Conv(x, num_classes, [1, 1]))

@@ -1,0 +1,116 @@
+{
+    "name": "UNet3D_5",
+    "n_gpu": 8,
+    "use_synch_bn": false,
+    "num_classes": 1,
+    "in_channels": 1,
+    "accumulation_steps": 1,
+    "mixed_precision": true,
+    "seed": 42,
+
+    "arch": {
+        "type": "UNet3D",
+        "args": {
+            "backbone": "",
+            "freeze_bn": false,
+            "freeze_backbone": false,            
+            "in_channels": 1,
+            "out_channels": 1,
+            "num_levels": 3,
+            "f_maps":128, 
+            "is_segmentation": false
+        }
+    },
+
+    "train_loader": {
+        "type": "MolinetteLungsLoader3D",
+        "args":{
+            "data_dir": "/data/deephealth-uc4/data/processed/unitochest_3D_5/train",
+            "mean" : [0.3257],
+            "std" : [0.3550],
+            "batch_size": 16,
+            "augment": true,
+            "base_size": 512,
+            "crop_size": false,
+            "shuffle": true,
+            "scale": false,
+            "flip": false,
+            "rotate": false,
+            "blur": false,
+            "split": "train",
+            "num_workers": 32
+        }
+    },
+
+    "val_loader": {
+        "type": "MolinetteLungsLoader3D",
+        "args":{
+            "data_dir": "/data/deephealth-uc4/data/processed/unitochest_3D_5/val",
+            "mean" : [0.3257],
+            "std" : [0.3550],
+            "batch_size": 1,
+            "augment": true,
+            "base_size": 512,
+            "crop_size": false,
+            "shuffle": false,
+            "scale": false,
+            "flip": false,
+            "rotate": false,
+            "blur": false,
+            "split": "val",
+            "num_workers": 32
+        }
+    },
+
+    "test_loader": {
+        "type": "MolinetteLungsLoader3D",
+        "args":{
+            "data_dir": "/data/deephealth-uc4/data/processed/unitochest_3D_5/test",
+            "mean" : [0.3257],
+            "std" : [0.3550],
+            "batch_size": 1,
+            "augment": true,
+            "base_size": 512,
+            "crop_size": false,
+            "shuffle": false,
+            "scale": false,
+            "flip": false,
+            "rotate": false,
+            "blur": false,
+            "split": "val",
+            "num_workers": 32
+        }
+    },
+
+    "optimizer": {
+        "type": "Adam",
+        "differential_lr": false,
+        "args":{
+            "lr": 0.0001,
+            "weight_decay": 1e-4
+        }
+    },
+
+    "loss": "DiceLoss",
+    "lr_scheduler": {
+        "args": {},
+        "type": "Poly"
+    },
+    "ignore_index": 255,
+
+    "trainer": {
+        "epochs": 200,
+        "save_dir": "saved/",
+        "save_period": 50,
+  
+        "monitor": "max Mean_IoU",
+        "early_stop": 50,
+        
+        "tensorboard": true,
+        "log_dir": "saved/",
+        "log_per_iter": 20,
+
+        "val": true,
+        "val_per_epochs": 1
+    }
+}

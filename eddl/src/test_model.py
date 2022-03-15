@@ -189,13 +189,13 @@ def main(args):
     print("---Inference takes %s seconds ---" % test_time)
 
 
-#python3 test_model.py ../data/processed/dataset_molinette20210418/dataset_molinette.yml --ckpts eidoslab/deephealth-uc4/1vmk2hrm/dh-uc4_epoch_2_miou_0.008275168765559426.bin --batch-size 12 --gpu 0 1 0 0
+#python3 test_model.py ../data/processed/dataset_molinette20210418/dataset_molinette.yml --ckpts eidoslab/deephealth-uc4/1vmk2hrm/dh-uc4_epoch_2_miou_0.008275168765559426.bin --batch_size 12 --gpu 0 1 0 0
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", metavar="INPUT_DATASET",default=None)
     parser.add_argument("--ckpts", metavar='CHECKPOINTS_PATH', default='dh-uc4_epoch_63_miou_0.5952193501975717.bin')
     parser.add_argument("--wb_run_path", metavar='RUN_PATH', default='eidoslab/deephealth-uc4/3r7s9qkd')
-    parser.add_argument("--batch-size", type=int, metavar="INT", default=1)
+    parser.add_argument("--batch_size", type=int, metavar="INT", default=1)
     parser.add_argument("--shape", type=int, default=512)
     parser.add_argument('--gpu', nargs='+', type=int, required=False, help='`--gpu 1 1` to use two GPUs')
     parser.add_argument("--num_workers", type=int, default=1)
