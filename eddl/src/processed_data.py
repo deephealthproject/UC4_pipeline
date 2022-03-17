@@ -1,3 +1,6 @@
+
+# ATTENTION!
+# USE FROM dhealth/pylibs-toolkit:0.10.0-cudnn TO CREATE THE YAML FILE!!!!
 import os
 import argparse
 import shutil
@@ -14,7 +17,7 @@ def convert_dicoms(split, input_path, output_path, df_path):
 
     df = pd.read_csv(os.path.join(input_path, df_path))
     if split in ["training", "validation"]:
-        df = df.drop(df.query('mask.isnull().values').sample(frac=0.99, random_state=0).index)
+        df = df.drop(df.query('mask.isnull().values').sample(frac=0.98, random_state=0).index)
     #df = df.drop(df.query('mask.isnull().values').sample(frac=1., random_state=0).index)
     # Copy masks
     shutil.copytree(os.path.join(input_path, 'ground_truth'),os.path.join(output_path, 'ground_truth'))

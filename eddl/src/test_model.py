@@ -111,6 +111,7 @@ def main(args):
     dice_evaluator.ResetEval()
     start_time = time.time()
     # Spawn the threads
+    eddl.set_mode(net, 0)
     d.Start()
     for b in range(num_batches_test):
         print("Batch {:d}/{:d} ".format(
@@ -123,59 +124,59 @@ def main(args):
         print("- Batch IoU: %.6g " % iou, end="", flush=True)
         print("- Batch dice: %.6g " % dice, end="", flush=True)
         print()
-        # for k in range(args.batch_size):
-        #     pred = output.select([str(k)])
-        #     gt = y.select([str(k)])
-        #     pred_np, gt_np = np.array(pred, copy=False), np.array(gt, copy=False)
-        #     iou = iou_evaluator.BinaryIoU(pred_np, gt_np, thresh=thresh)
-        #     dice = dice_evaluator.DiceCoefficient(pred_np, gt_np, thresh=thresh)
-        #     print("- Batch IoU: %.6g " % iou, end="", flush=True)
-        #     print("- Batch dice: %.6g " % dice, end="", flush=True)
+        for k in range(args.batch_size):
+            pred = output.select([str(k)])
+            gt = y.select([str(k)])
+            pred_np, gt_np = np.array(pred, copy=False), np.array(gt, copy=False)
+            iou = iou_evaluator.BinaryIoU(pred_np, gt_np, thresh=thresh)
+            dice = dice_evaluator.DiceCoefficient(pred_np, gt_np, thresh=thresh)
+            print("- Batch IoU: %.6g " % iou, end="", flush=True)
+            print("- Batch dice: %.6g " % dice, end="", flush=True)
 
-        #     if args.runs_dir:
-        #         # Save original image fused together with prediction and
-        #         # ground truth
-        #         pred_np[pred_np >= thresh] = 1
-        #         pred_np[pred_np < thresh] = 0
-        #         pred_np *= 255
-        #         pred_ecvl = ecvl.TensorToView(pred)
-        #         pred_ecvl.colortype_ = ecvl.ColorType.GRAY
-        #         pred_ecvl.channels_ = "xyc"
-        #         ecvl.ResizeDim(pred_ecvl, pred_ecvl, (512,512),
-        #                            ecvl.InterpolationType.nearest)
+            if args.runs_dir:
+                # Save original image fused together with prediction and
+                # ground truth
+                pred_np[pred_np >= thresh] = 1
+                pred_np[pred_np < thresh] = 0
+                pred_np *= 255
+                pred_ecvl = ecvl.TensorToView(pred)
+                pred_ecvl.colortype_ = ecvl.ColorType.GRAY
+                pred_ecvl.channels_ = "xyc"
+                ecvl.ResizeDim(pred_ecvl, pred_ecvl, (512,512),
+                                   ecvl.InterpolationType.nearest)
 
-        #         filename_gt = d.samples_[d.GetSplit()[b*args.batch_size + k]].label_path_
-        #         gt_ecvl = ecvl.ImRead(filename_gt,
-        #                                 ecvl.ImReadMode.GRAYSCALE)
-        #         ecvl.ResizeDim(gt_ecvl, gt_ecvl, (512,512),
-        #                            ecvl.InterpolationType.nearest)
+                filename_gt = d.samples_[d.GetSplit()[b*args.batch_size + k]].label_path_
+                gt_ecvl = ecvl.ImRead(filename_gt,
+                                        ecvl.ImReadMode.GRAYSCALE)
+                ecvl.ResizeDim(gt_ecvl, gt_ecvl, (512,512),
+                                   ecvl.InterpolationType.nearest)
 
-        #         filename = d.samples_[d.GetSplit()[b*args.batch_size + k]].location_[0]
+                filename = d.samples_[d.GetSplit()[b*args.batch_size + k]].location_[0]
 
-        #         # Image as BGR
-        #         img_ecvl = ecvl.ImRead(filename)
-        #         #ecvl.Stack([img_ecvl, img_ecvl, img_ecvl], img_ecvl)
-        #         #img_ecvl.channels_ = "xyc"
-        #         #img_ecvl.colortype_ = ecvl.ColorType.BGR
-        #         ecvl.ResizeDim(img_ecvl, img_ecvl, (512,512),
-        #                            ecvl.InterpolationType.nearest)
-        #         image_np = np.array(img_ecvl, copy=False)
-        #         pred_np = np.array(pred_ecvl, copy=False)
-        #         gt_np = np.array(gt_ecvl, copy=False)
+                # Image as BGR
+                img_ecvl = ecvl.ImRead(filename)
+                #ecvl.Stack([img_ecvl, img_ecvl, img_ecvl], img_ecvl)
+                #img_ecvl.channels_ = "xyc"
+                #img_ecvl.colortype_ = ecvl.ColorType.BGR
+                ecvl.ResizeDim(img_ecvl, img_ecvl, (512,512),
+                                   ecvl.InterpolationType.nearest)
+                image_np = np.array(img_ecvl, copy=False)
+                pred_np = np.array(pred_ecvl, copy=False)
+                gt_np = np.array(gt_ecvl, copy=False)
 
-        #         pred_np = pred_np.squeeze()
-        #         gt_np = gt_np.squeeze()
-        #         # Prediction summed in R channel
-        #         image_np[:, :, -1] = np.where(pred_np == 255, pred_np,
-        #                                         image_np[:, :, -1])
-        #         # Ground truth summed in G channel
-        #         image_np[:, :, 1] = np.where(gt_np == 255, gt_np,
-        #                                         image_np[:, :, 1])
+                pred_np = pred_np.squeeze()
+                gt_np = gt_np.squeeze()
+                # Prediction summed in R channel
+                image_np[:, :, -1] = np.where(pred_np == 255, pred_np,
+                                                image_np[:, :, -1])
+                # Ground truth summed in G channel
+                image_np[:, :, 1] = np.where(gt_np == 255, gt_np,
+                                                image_np[:, :, 1])
 
-        #         head, tail = os.path.splitext(os.path.basename(filename))
-        #         bname = "{}.png".format(head)
-        #         filepath = os.path.join(args.runs_dir, "images", bname)
-        #         ecvl.ImWrite(filepath, img_ecvl)
+                head, tail = os.path.splitext(os.path.basename(filename))
+                bname = "{}.png".format(head)
+                filepath = os.path.join(args.runs_dir, "images", bname)
+                ecvl.ImWrite(filepath, img_ecvl)
     d.Stop()
     test_time = ((time.time() - start_time) / num_batches_test) / args.batch_size
     miou = iou_evaluator.MeanMetric()
@@ -201,6 +202,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", type=int, default=1)
     parser.add_argument("--queue_ratio_size", type=int, default=4)
     parser.add_argument("--mem", metavar="|".join(MEM_CHOICES), choices=MEM_CHOICES, default="low_mem")
-    parser.add_argument("--runs-dir", metavar="DIR",
+    parser.add_argument("--runs_dir", metavar="DIR",
                         help="if set, save images, checkpoints and logs in this directory")
     main(parser.parse_args())

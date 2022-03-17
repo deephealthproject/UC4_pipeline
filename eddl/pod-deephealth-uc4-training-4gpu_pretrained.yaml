@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
- name: deephealth-uc4-processed
+ name: deephealth-uc4-training-4gpu
 spec:
  restartPolicy: Never
  containers:
  - name: deephealth-uc4
    image: riccardorenzulli/deephealth-uc4:cudnn
    command: ["bash", "-c"]
-   args: ["cd UC4_pipeline/eddl/src; python3 processed_data.py --input_path /data/deephealth/deephealth-uc4/data/eddl/interim/unitochest --output_path /data/deephealth/deephealth-uc4/data/eddl/processed/unitochest_98"]
+   args: ["cd UC4_pipeline/eddl/src; python3 train_model.py --dataset /data/deephealth/deephealth-uc4/data/eddl/processed/unitochest_98/dataset_molinette.yml --epochs 100 --batch_size 12 --gpu 1 1 1 1 --num_workers 4 --queue_ratio_size 16 --resume_ckpts dh-uc4_epoch_150_miou_0.546678588931127.bin --wb_run_path eidoslab/deephealth-uc4/2s0msy84"]
    volumeMounts:
           - name: download
             mountPath: /data
@@ -25,9 +25,9 @@ spec:
           key: key
    resources:
      limits:
-       nvidia.com/gpu: 1
+       nvidia.com/gpu: 4
      requests:
-       nvidia.com/gpu: 1
+       nvidia.com/gpu: 4
  volumes:
       - name: download
         persistentVolumeClaim:

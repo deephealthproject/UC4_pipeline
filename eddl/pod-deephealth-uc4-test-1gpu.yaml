@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
- name: deephealth-uc4-test
+ name: deephealth-uc4-test-1gpu
 spec:
  restartPolicy: Never
  containers:
  - name: deephealth-uc4
    image: riccardorenzulli/deephealth-uc4:cudnn
    command: ["bash", "-c"]
-   args: ["cd deephealth-uc4-pyecvl/; python3 test_model.py --dataset /data/unitochest_eddl_fulltest/dataset_molinette.yml --ckpts dh-uc4_epoch_150_miou_0.546678588931127.bin --wb_run_path eidoslab/deephealth-uc4/2s0msy84 --batch_size 3 --gpu 1 --num_workers 1 --queue_ratio_size 1"]
+   args: ["cd UC4_pipeline/eddl/src; python3 test_model.py --dataset /data/deephealth/deephealth-uc4/data/eddl/processed/unitochest_98/dataset_molinette.yml --ckpts dh-uc4_epoch_2_miou_0.5861243425093038.bin --wb_run_path eidoslab/deephealth-uc4/2iwcvn0o --batch_size 1 --gpu 1 --num_workers 1 --queue_ratio_size 4"]
    volumeMounts:
           - name: download
             mountPath: /data

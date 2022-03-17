@@ -8,7 +8,7 @@ spec:
  - name: deephealth-uc4
    image: riccardorenzulli/deephealth-uc4:cudnn
    command: ["bash", "-c"]
-   args: ["cd UC4_pipeline/eddl/src; python3 train_model.py --dataset /data/deephealth/deephealth-uc4/data/processed/unitochest99/dataset_molinette.yml --epochs 100 --batch_size 3 --gpu 1 --num_workers 1 --queue_ratio_size 4"]
+   args: ["cd UC4_pipeline/eddl/src; python3 train_model.py --dataset /data/deephealth/deephealth-uc4/data/eddl/processed/unitochest_noblackmasks/dataset_molinette.yml --epochs 100 --batch_size 3 --gpu 1 --num_workers 1 --queue_ratio_size 4"]
    volumeMounts:
           - name: download
             mountPath: /data
@@ -31,4 +31,4 @@ spec:
  volumes:
       - name: download
         persistentVolumeClaim:
-          claimName: deephealth-uc4
+          claimName: deephealth-uc4-shared

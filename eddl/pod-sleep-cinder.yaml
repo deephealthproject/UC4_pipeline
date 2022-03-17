@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
- name: deephealth-uc4-processed
+ name: sleep-cinder
 spec:
  restartPolicy: Never
  containers:
- - name: deephealth-uc4
+ - name: sleep
    image: riccardorenzulli/deephealth-uc4:cudnn
-   command: ["bash", "-c"]
-   args: ["cd UC4_pipeline/eddl/src; python3 processed_data.py --input_path /data/deephealth/deephealth-uc4/data/eddl/interim/unitochest --output_path /data/deephealth/deephealth-uc4/data/eddl/processed/unitochest_98"]
+   command: ["/bin/bash", "-c", "--"]
+   args: ["while true; do sleep 30; done;"]
    volumeMounts:
           - name: download
             mountPath: /data
@@ -23,12 +23,8 @@ spec:
         secretKeyRef:
           name: perlo-wandb-auth
           key: key
-   resources:
-     limits:
-       nvidia.com/gpu: 1
-     requests:
-       nvidia.com/gpu: 1
  volumes:
       - name: download
         persistentVolumeClaim:
           claimName: deephealth-uc4
+

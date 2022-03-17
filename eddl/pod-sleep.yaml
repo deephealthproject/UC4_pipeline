@@ -26,4 +26,5 @@ spec:
  volumes:
       - name: download
         persistentVolumeClaim:
-          claimName: deephealth-uc4
+          claimName: deephealth-uc4-shared
+
