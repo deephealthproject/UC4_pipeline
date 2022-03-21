@@ -1,18 +1,16 @@
+import sys
 import torch
 import time
+import wandb
 import numpy as np
-from torchvision.utils import make_grid
-from torchvision import transforms
-from utils import transforms as local_transforms
 from base import BaseTrainer, DataPrefetcher
-from utils.helpers import colorize_mask
-from utils.metrics import AverageValueMeter, eval_metrics, AverageMeter
+from utils.metrics import eval_metrics, AverageMeter
 from tqdm import tqdm
 from torch.cuda.amp import autocast 
 
 class Trainer(BaseTrainer):
-    def __init__(self, model, loss, resume, config, train_loader, val_loader=None, test_loader=None, train_logger=None, prefetch=True):
-        super(Trainer, self).__init__(model, loss, resume, config, train_loader, val_loader, test_loader, train_logger)
+    def __init__(self, model, loss, resume, wb_run_path, config, train_loader, val_loader=None, test_loader=None, train_logger=None, prefetch=True):
+        super(Trainer, self).__init__(model, loss, resume, wb_run_path, config, train_loader, val_loader, test_loader, train_logger)
         
         self.wrt_mode, self.wrt_step = 'train_', 0
         self.log_step = config['trainer'].get('log_per_iter', int(np.sqrt(self.train_loader.batch_size)))
@@ -92,7 +90,7 @@ class Trainer(BaseTrainer):
                     self.optimizer.step()
                     self.optimizer.zero_grad()
 
-                # measure elapsed time
+                # measurmlosse elapsed time
                 self.batch_time.update(time.time() - tic)
                 tic = time.time()
             
@@ -125,12 +123,15 @@ class Trainer(BaseTrainer):
                                             acc, TP, FN, TN, FP, sens, spec, self.batch_time.mean, self.data_time.mean))
 
         # METRICS TO TENSORBOARD
-        self.writer.add_scalar(f'{self.wrt_mode}/loss', torch.cat(self.total_loss, 0).mean().item(), epoch)
+        #self.writer.add_scalar(f'{self.wrt_mode}-loss', torch.cat(self.total_loss, 0).mean().item(), epoch)
+        wandb.log({f'{self.wrt_mode}-loss': torch.cat(self.total_loss, 0).mean().item()}, commit=False)
         seg_metrics = self._get_seg_metrics()
         for k, v in list(seg_metrics.items()): 
-            self.writer.add_scalar(f'{self.wrt_mode}/{k}', v, epoch)
+            #self.writer.add_scalar(f'{self.wrt_mode}-{k}', v, epoch)
+            wandb.log({f'{self.wrt_mode}-{k}': v}, commit=False)
         for i, opt_group in enumerate(self.optimizer.param_groups):
-            self.writer.add_scalar(f'{self.wrt_mode}/Learning_rate_{i}', opt_group['lr'], epoch)
+            #self.writer.add_scalar(f'{self.wrt_mode}-learning_rate_{i}', opt_group['lr'], epoch)
+            wandb.log({f'{self.wrt_mode}-learning_rate_{i}': opt_group['lr']}, commit=False)
 
         # RETURN LOSS & METRICS
         log = {'loss': torch.cat(self.total_loss, 0).mean().item(),
@@ -145,7 +146,7 @@ class Trainer(BaseTrainer):
         self.logger.info('\n###### VALIDATION ######')
 
         self.model.eval()
-        self.wrt_mode = 'val'
+        self.wrt_mode = 'validation'
 
         self._reset_metrics()
         tbar = tqdm(self.val_loader, ncols=130)
@@ -186,13 +187,15 @@ class Trainer(BaseTrainer):
 
             # METRICS TO TENSORBOARD
             self.wrt_step = (epoch) * len(self.val_loader)
-            self.writer.add_scalar(f'{self.wrt_mode}/loss', torch.cat(self.total_loss, 0).mean().item(), epoch)
+            #self.writer.add_scalar(f'{self.wrt_mode}-loss', torch.cat(self.total_loss, 0).mean().item(), epoch)
+            wandb.log({f'{self.wrt_mode}-loss': torch.cat(self.total_loss, 0).mean().item()}, commit=False)
             seg_metrics = self._get_seg_metrics()
             for k, v in list(seg_metrics.items()): 
-                self.writer.add_scalar(f'{self.wrt_mode}/{k}', v, epoch)
+                #self.writer.add_scalar(f'{self.wrt_mode}-{k}', v, epoch)
+                wandb.log({f'{self.wrt_mode}-{k}': v}, commit=False)
 
             log = {
-                'val_loss': torch.cat(self.total_loss, 0).mean().item(),
+                'validation-loss': torch.cat(self.total_loss, 0).mean().item(),
                 **seg_metrics
             }
 
@@ -251,13 +254,15 @@ class Trainer(BaseTrainer):
 
             # METRICS TO TENSORBOARD
             self.wrt_step = (epoch) * len(self.test_loader)
-            self.writer.add_scalar(f'{self.wrt_mode}/loss', torch.cat(self.total_loss, 0).mean().item(), epoch)
+            wandb.log({f'{self.wrt_mode}-loss': torch.cat(self.total_loss, 0).mean().item()}, commit=False)
+            #self.writer.add_scalar(f'{self.wrt_mode}-loss', torch.cat(self.total_loss, 0).mean().item(), epoch)
             seg_metrics = self._get_seg_metrics()
             for k, v in list(seg_metrics.items()): 
-                self.writer.add_scalar(f'{self.wrt_mode}/{k}', v, epoch)
+                #self.writer.add_scalar(f'{self.wrt_mode}-{k}', v, epoch)
+                wandb.log({f'{self.wrt_mode}-{k}': v}, commit=False)
 
             log = {
-                'test_loss': torch.cat(self.total_loss, 0).mean().item(),
+                'test-loss': torch.cat(self.total_loss, 0).mean().item(),
                 **seg_metrics
             }
 
@@ -292,9 +297,9 @@ class Trainer(BaseTrainer):
             mDiceCoeff =  torch.cat(self.total_dice, 0).mean().item()
             #print(mIoU)
             return {
-                "Pixel_Accuracy": np.round(pixAcc, 3),
-                "Mean_IoU": np.round(mIoU, 3),
-                "Mean_DiceCoeff":  np.round(mDiceCoeff,3)
+                "pixel-accuracy": np.round(pixAcc, 3),
+                "iou": np.round(mIoU, 3),
+                "dice":  np.round(mDiceCoeff,3)
             }
         else:
             acc = 1.0 * self.total_correct / (np.spacing(1) + self.total_label)

@@ -2,17 +2,17 @@ import os
 import json
 import argparse
 import torch
+import wandb
 import dataloaders
 import models
-import inspect
-import math
 import random
 import numpy as np
 from utils import losses
 from utils import Logger
-from utils.torchsummary import summary
 from trainer import Trainer
-import segmentation_models_pytorch as smp
+
+wandb.login()
+wandb.init(project="deephealth-uc4", tags=["PyTorch_{}".format(torch.__version__)])
 
 def set_seed(seed):
     random.seed(seed)
@@ -28,7 +28,7 @@ def get_instance(module, name, config, *args):
     # GET THE CORRESPONDING CLASS / FCT 
     return getattr(module, config[name]['type'])(*args, **config[name]['args'])
 
-def main(config, resume):
+def main(config, resume, wb_run_path):
     set_seed(config["seed"])
     train_logger = Logger()
 
@@ -45,18 +45,13 @@ def main(config, resume):
     availble_gpus = list(range(torch.cuda.device_count()))
     print(availble_gpus)
     if resume is not None:
-        checkpoint = torch.load(resume)
+        #checkpoint = torch.load(resume)
+        checkpoint = wandb.restore(resume, run_path=wb_run_path)
         if isinstance(checkpoint, dict) and 'state_dict' in checkpoint.keys():
             checkpoint = checkpoint['state_dict']
         if 'module' in list(checkpoint.keys())[0] and not isinstance(model, torch.nn.DataParallel):
             model = torch.nn.DataParallel(model, device_ids=availble_gpus)
         model.load_state_dict(checkpoint)
-    # model = smp.DeepLabV3Plus(
-    #     encoder_name="resnet101",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
-    #     encoder_weights="imagenet",     # use `imagenet` pre-trained weights for encoder initialization
-    #     in_channels=1,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
-    #     classes=1,                      # model output channels (number of classes in your dataset)
-    # )
     print(f'\n{model}\n')
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
@@ -70,6 +65,7 @@ def main(config, resume):
         model=model,
         loss=loss,
         resume=None,
+        wb_run_path=None,
         config=config,
         train_loader=train_loader,
         val_loader=val_loader,
@@ -86,6 +82,8 @@ if __name__=='__main__':
                         help='Path to the config file (default: config.json)')
     parser.add_argument('-r', '--resume', default=None, type=str,
                         help='Path to the .pth model checkpoint to resume training')
+    parser.add_argument('-w', '--wb_run_path', default=None, type=str,
+                        help='Weights & Biases run id path (like eidoslab/deephealth-uc4/3r7s9qkd) of the checkpoint to be resumed')
     parser.add_argument('-d', '--device', default=None, type=str,
                            help='indices of GPUs to enable (default: all)')
     args = parser.parse_args()
@@ -96,4 +94,4 @@ if __name__=='__main__':
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
     
-    main(config, args.resume)
+    main(config, args.resume, args.wb_run_path)

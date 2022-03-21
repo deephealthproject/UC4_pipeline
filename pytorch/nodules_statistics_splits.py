@@ -99,8 +99,8 @@ def count_nodules_statistics(binned_stats, split, root, df, gt_paths, dicom_path
         df.loc[df_length] = row
     return N
 def main(args):
-    splits = ["test", "val", "train"]
-    binned_stats = {"test": [0, 0, 0, 0], "val": [0,0,0,0], "train": [0,0,0,0]}
+    splits = ["test", "validation", "training"]
+    binned_stats = {"test": [0, 0, 0, 0], "validation": [0,0,0,0], "training": [0,0,0,0]}
     for split in splits:
         print("#"*20 + split + "#"*20)
         df = pd.read_csv(os.path.join(args.data, split, "{}_dataset.csv".format(split)))

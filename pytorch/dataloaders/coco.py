@@ -7,7 +7,6 @@ from glob import glob
 import numpy as np
 import scipy.io as sio
 from utils import palette
-import torch
 import os
 import cv2
 

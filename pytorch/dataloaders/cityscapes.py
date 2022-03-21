@@ -3,11 +3,7 @@ from utils import palette
 from glob import glob
 import numpy as np
 import os
-import cv2
-import torch
 from PIL import Image
-from torch.utils.data import Dataset
-from torchvision import transforms
 
 ignore_label = 255
 ID_TO_TRAINID = {-1: ignore_label, 0: ignore_label, 1: ignore_label, 2: ignore_label,

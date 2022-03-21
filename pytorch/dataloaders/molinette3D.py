@@ -1,17 +1,9 @@
 
 import numpy as np
 import os
-from scipy import ndimage
-import torch
-import cv2
-from tqdm import tqdm
-from PIL import Image
-from glob import glob
-from base import BaseDataSet, BaseDataLoader, BaseDataSet3D
+from base import BaseDataLoader, BaseDataSet3D
 from utils import palette
 from pathlib import Path
-from torch.utils.data import Dataset
-from torchvision import transforms
 
 class MolinetteLungsDataset3D(BaseDataSet3D):
     def __init__(self, **kwargs):
@@ -21,7 +13,7 @@ class MolinetteLungsDataset3D(BaseDataSet3D):
 
     def _set_files(self):
         self.image_dir = os.path.join(self.root, 'images')#, self.split)
-        self.label_dir = os.path.join(self.root, 'masks')#, self.split)
+        self.label_dir = os.path.join(self.root, 'ground_truth')#, self.split)
         self.images_paths = sorted([path for path in Path(self.image_dir).rglob('*.npy')])
         self.masks_paths = sorted([path for path in Path(self.label_dir).rglob('*.npy')])
         assert(len(self.masks_paths) == len(self.images_paths))

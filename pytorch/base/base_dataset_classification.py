@@ -7,8 +7,6 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
-from scipy import ndimage
-import matplotlib.pyplot as plt
 
 class BaseDataSetClassification(Dataset):
     def __init__(self, root, split, mean, std, base_size=None, augment=True, val=False,
@@ -16,7 +14,7 @@ class BaseDataSetClassification(Dataset):
         self.root = root
         csv_path = os.path.join(root, "{}_dataset.csv".format(split))
         self.dataframe = pd.read_csv(csv_path) if os.path.exists(csv_path) else None
-        if split == "train":
+        if split == "training":
             self.dataframe = self.dataframe.drop(self.dataframe.query('mask.isnull().values').sample(frac=0.90, random_state=0).index)
         #print(self.dataframe.head())
         #else:

@@ -23,15 +23,15 @@ from dataloaders.molinette import MolinetteLungsLoader
 from dataloaders.molinette3D import MolinetteLungsLoader3D
 
 def main(args):  
-    loader = MolinetteLungsLoader(data_dir=os.path.join(args.data, 'train'),
+    loader = MolinetteLungsLoader(data_dir=os.path.join(args.data, 'training'),
                             batch_size=128, 
                             num_workers=0, 
                             augment=True, 
                             base_size=512, 
                             scale=False,
                             shuffle=False, 
-                            split="train")  
-    # loader = MolinetteLungsLoader3D(data_dir=os.path.join(args.data, 'train'),
+                            split="training")  
+    # loader = MolinetteLungsLoader3D(data_dir=os.path.join(args.data, 'training'),
     #                         batch_size=16, 
     #                         num_workers=4, 
     #                         augment=True, 

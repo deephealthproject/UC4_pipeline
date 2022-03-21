@@ -11,9 +11,9 @@ plt.rcParams.update({
     "font.serif": ["Computer Modern Roman"],
     "font.size": 14,
     })
-test_loss_csv = "eddl/wandb/run_2s0msy84_test_loss.csv"
-training_loss_csv = "eddl/wandb/run_2s0msy84_training_loss.csv"
-validation_loss_csv = "eddl/wandb/run_2s0msy84_validation_loss.csv"
+test_loss_csv = "../wandb/run_2s0msy84_test_loss.csv"
+training_loss_csv = "../wandb/run_2s0msy84_training_loss.csv"
+validation_loss_csv = "../wandb/run_2s0msy84_validation_loss.csv"
 
 test_loss = pd.read_csv(test_loss_csv)
 training_loss = pd.read_csv(training_loss_csv)
@@ -29,5 +29,5 @@ plt.ylabel("Dice loss")
 plt.xlabel("Epoch")
 plt.title("Dice loss for U-Net model with PyECVL and PyEDDL")
 plt.legend(facecolor="white")
-plt.savefig("dice_loss.pdf")
+plt.savefig("../figures/dice_loss.pdf")
 

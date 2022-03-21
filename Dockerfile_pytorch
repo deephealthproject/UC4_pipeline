@@ -1,0 +1,7 @@
+FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-runtime
+RUN apt-get update
+RUN apt-get install openssh-server unzip ffmpeg libsm6 libxext6  -y
+RUN pip install pandas wandb zipfile38 numpy scipy opencv-python tqdm scikit-learn pydicom pypng pillow matplotlib seaborn scikit-image MedPy tensorboard
+RUN mkdir UC4_pipeline
+COPY . UC4_pipeline/
+

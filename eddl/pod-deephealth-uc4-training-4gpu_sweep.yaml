@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
- name: sleep-cinder
+ name: deephealth-uc4-training-4gpu-sweep
 spec:
  restartPolicy: Never
  containers:
- - name: sleep
+ - name: deephealth-uc4
    image: riccardorenzulli/deephealth-uc4:cudnn
-   command: ["/bin/bash", "-c", "--"]
-   args: ["while true; do sleep 30; done;"]
+   command: ["bash", "-c"]
+   args: ["cd UC4_pipeline/eddl/src; python3 train_model_sweep.py --dataset /data/deephealth/deephealth-uc4/data/eddl/processed/unitochest_noblackmasks/dataset_molinette.yml --epochs 1 --batch_size 12 --gpu 1 1 1 1"]
    volumeMounts:
           - name: download
             mountPath: /data
@@ -23,8 +23,12 @@ spec:
         secretKeyRef:
           name: perlo-wandb-auth
           key: key
+   resources:
+     limits:
+       nvidia.com/gpu: 4
+     requests:
+       nvidia.com/gpu: 4
  volumes:
       - name: download
         persistentVolumeClaim:
-          claimName: deephealth-uc4
-
+          claimName: unitochest

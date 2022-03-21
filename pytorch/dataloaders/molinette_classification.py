@@ -1,17 +1,9 @@
 
 import numpy as np
 import os
-from scipy import ndimage
-import torch
-import cv2
-from tqdm import tqdm
 from PIL import Image
-from glob import glob
-from base import BaseDataSet, BaseDataLoader, BaseDataSetClassification
+from base import BaseDataLoader, BaseDataSetClassification
 from utils import palette
-from pathlib import Path
-from torch.utils.data import Dataset
-from torchvision import transforms
 
 def is_nan(x):
     return (x != x)
@@ -25,7 +17,7 @@ class MolinetteLungsDataset(BaseDataSetClassification):
     def _set_files(self):
         
         self.image_dir = os.path.join(self.root, 'images')#, self.split)
-        self.label_dir = os.path.join(self.root, 'masks')#, self.split)
+        self.label_dir = os.path.join(self.root, 'ground_truth')#, self.split)
         self.dataframe['image'] = self.dataframe['image'].apply(lambda x: os.path.join(self.image_dir, x))
         self.dataframe['mask'] = self.dataframe['mask'].apply(lambda x: x if is_nan(x) else os.path.join(self.label_dir, x))
         self.images_paths = list(self.dataframe['image'])

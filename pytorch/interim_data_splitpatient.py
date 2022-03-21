@@ -1,19 +1,11 @@
 import os
 import shutil
-import cv2
-from numpy.lib import math
-from scipy import ndimage
-import torch
 import shutil
 import argparse
-import logging
 import pandas as pd
 import numpy as np
 import utils.file_utils as fu
 from tqdm import tqdm
-from pathlib import Path
-from dataloaders.molinette import MolinetteLungsLoader
-from torchvision import transforms
 from sklearn.model_selection import train_test_split
 
 tqdm.pandas()
@@ -74,7 +66,8 @@ def split_train_test(df, train_size=0.9):
 
 def copy_element(x, input_path, output_path):
     old_image_path = os.path.join(input_path, 'images', x['image'])
-    new_image_path = old_image_path.replace(input_path, output_path)
+    old_image_path_unrolled = os.path.join(input_path, 'images', x['image'].split("/")[-1])
+    new_image_path = old_image_path_unrolled.replace(input_path, output_path)
     fu.ensure_dir(os.path.dirname(new_image_path))
     shutil.copy(old_image_path, new_image_path)
 
@@ -82,7 +75,9 @@ def copy_element(x, input_path, output_path):
         a = 3
     else:
         old_mask_path = os.path.join(input_path, 'masks', x['mask'])
-        new_mask_path = old_mask_path.replace(input_path, output_path)
+        old_mask_path_unrolled = os.path.join(input_path, 'masks', x['mask'].split("/")[-1])
+        new_mask_path = old_mask_path_unrolled.replace(input_path, output_path)
+        new_mask_path = new_mask_path.replace('masks', 'ground_truth')
         fu.ensure_dir(os.path.dirname(new_mask_path))
         shutil.copy(old_mask_path, new_mask_path)
 
@@ -114,7 +109,6 @@ def copy_dataset(df, input_path, output_path):
 #     return df
 
 def main(args):
-    train_size = 0.8
     csv_path = os.path.join(args.input_path, 'dataset.csv')
     shutil.rmtree(args.output_path, ignore_errors = True)
     df = pd.read_csv(csv_path)
@@ -165,39 +159,22 @@ def main(args):
     df_train_f = df[df['patientID'].isin(list(df_train['patientID'].unique()))]
     df_val_f = df[df['patientID'].isin(list(df_val['patientID'].unique()))]
     df_test_f = df[df['patientID'].isin(list(df_test['patientID'].unique()))]
-    copy_dataset(df_train_f, args.input_path, os.path.join(args.output_path, 'train'))
-    copy_dataset(df_val_f, args.input_path, os.path.join(args.output_path, 'val'))
+    copy_dataset(df_train_f, args.input_path, os.path.join(args.output_path, 'training'))
+    copy_dataset(df_val_f, args.input_path, os.path.join(args.output_path, 'validation'))
     copy_dataset(df_test_f, args.input_path, os.path.join(args.output_path, 'test'))
-    df_train_f.to_csv(os.path.join(args.output_path, 'train', 'train_dataset.csv'), index=False)
-    df_val_f.to_csv(os.path.join(args.output_path, 'val', 'val_dataset.csv'), index=False)
+
+    df_train_f["image"] = df_train_f["image"].str.split("/").str[-1]
+    df_train_f["mask"] = df_train_f["mask"].str.split("/").str[-1]
+
+    df_val_f["image"] = df_val_f["image"].str.split("/").str[-1]
+    df_val_f["mask"] = df_val_f["mask"].str.split("/").str[-1]
+
+    df_test_f["image"] = df_test_f["image"].str.split("/").str[-1]
+    df_test_f["mask"] = df_test_f["mask"].str.split("/").str[-1]
+
+    df_train_f.to_csv(os.path.join(args.output_path, 'training', 'training_dataset.csv'), index=False)
+    df_val_f.to_csv(os.path.join(args.output_path, 'validation', 'validation_dataset.csv'), index=False)
     df_test_f.to_csv(os.path.join(args.output_path, 'test', 'test_dataset.csv'), index=False)
-
-    # loader = MolinetteLungsLoader(data_dir=os.path.join(args.output_path, 'train'),
-    #                         batch_size=128, 
-    #                         num_workers=0, 
-    #                         augment=True, 
-    #                         base_size=512, 
-    #                         scale=False,
-    #                         shuffle=False, 
-    #                         split="train")
-    # mean = 0.
-    # std = 0.
-    # var = 0.
-    # nb_samples = 0.
-    # print(len(loader))
-    # for data, _ in tqdm(loader):
-    #     batch_samples = data.size(0)
-    #     data = data.view(batch_samples, data.size(1), -1)
-    #     mean += data.mean(2).sum(0)
-    #     var += data.var(2).sum(0)
-    #     nb_samples += batch_samples
-
-    # mean /= nb_samples
-    # var /= nb_samples
-    # std = torch.sqrt(var)
-    # print("mean: " + str(mean))
-    # print("std: " + str(std))
-    # print()
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Final dataset')

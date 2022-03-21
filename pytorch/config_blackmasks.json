@@ -4,6 +4,7 @@
     "use_synch_bn": false,
     "num_classes": 1,
     "in_channels": 1,
+    "task": "segmentation",
     "accumulation_steps": 1,
     "mixed_precision": true,
     "seed": 42,
@@ -23,6 +24,7 @@
             "data_dir": "/data/deephealth/deephealth-uc4/data/processed/unitochest/train",
             "mean" : [0.3405],
             "std" : [0.3604],
+            "black_masks": 0.1,
             "batch_size": 128,
             "augment": true,
             "base_size": 512,
@@ -32,7 +34,7 @@
             "flip": true,
             "rotate": true,
             "blur": false,
-            "split": "train",
+            "split": "training",
             "num_workers": 32
         }
     },
@@ -43,6 +45,7 @@
             "data_dir": "/data/deephealth/deephealth-uc4/data/processed/unitochest/val",
             "mean" : [0.3405],
             "std" : [0.3604],
+            "black_masks": 0.1,
             "batch_size": 128,
             "augment": true,
             "base_size": 512,
@@ -52,7 +55,7 @@
             "flip": false,
             "rotate": false,
             "blur": false,
-            "split": "val",
+            "split": "validation",
             "num_workers": 32
         }
     },
@@ -63,6 +66,7 @@
             "data_dir": "/data/deephealth/deephealth-uc4/data/processed/unitochest/test",
             "mean" : [0.3405],
             "std" : [0.3604],
+            "black_masks": 0.1,
             "batch_size": 128,
             "augment": true,
             "base_size": 512,
@@ -98,7 +102,7 @@
         "save_dir": "/data/deephealth/deephealth-uc4/data/saved/",
         "save_period": 50,
   
-        "monitor": "max Mean_IoU",
+        "monitor": "max iou",
         "early_stop": 50,
         
         "tensorboard": true,

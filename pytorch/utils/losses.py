@@ -2,9 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from sklearn.utils import class_weight 
 from utils.lovasz_losses import lovasz_softmax
-import segmentation_models_pytorch as smp
 
 def make_one_hot(labels, classes):
     one_hot = torch.cuda.FloatTensor(labels.size()[0], classes, labels.size()[2], labels.size()[3]).zero_()
@@ -41,14 +39,6 @@ class BCEWithLogitsLoss(nn.Module):
     def forward(self, output, target):
         loss = self.BCE(output.squeeze(), target.squeeze().type_as(output))
         return loss
-
-class DiceLoss2(nn.Module):
-    def __init__(self, weight=None,  ignore_index=255, size_average=True):
-        super(DiceLoss, self).__init__()
-        self.dice = smp.losses.DiceLoss(mode="binary")
-
-    def forward(self, inputs, targets, smooth=1):
-        return self.dice(inputs, targets)
 
 class DiceLoss(nn.Module):
     def __init__(self, weight=None,  ignore_index=255, size_average=True):

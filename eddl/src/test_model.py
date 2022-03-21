@@ -27,6 +27,7 @@ https://github.com/deephealthproject/use_case_pipeline
 """
 
 import argparse
+import shutil
 import numpy as np
 import os
 import time
@@ -44,6 +45,8 @@ api = wandb.Api()
 MEM_CHOICES = ("low_mem", "mid_mem", "full_mem")
 
 def main(args):
+    if os.path.exists(args.runs_dir):
+        shutil.rmtree(args.runs_dir)
     run = api.run(args.wb_run_path)
     num_workers = args.num_workers
     queue_ratio_size = args.queue_ratio_size
@@ -155,9 +158,9 @@ def main(args):
 
                 # Image as BGR
                 img_ecvl = ecvl.ImRead(filename)
-                #ecvl.Stack([img_ecvl, img_ecvl, img_ecvl], img_ecvl)
-                #img_ecvl.channels_ = "xyc"
-                #img_ecvl.colortype_ = ecvl.ColorType.BGR
+                ecvl.Stack([img_ecvl, img_ecvl, img_ecvl], img_ecvl)
+                img_ecvl.channels_ = "xyc"
+                img_ecvl.colortype_ = ecvl.ColorType.BGR
                 ecvl.ResizeDim(img_ecvl, img_ecvl, (512,512),
                                    ecvl.InterpolationType.nearest)
                 image_np = np.array(img_ecvl, copy=False)
@@ -167,6 +170,7 @@ def main(args):
                 pred_np = pred_np.squeeze()
                 gt_np = gt_np.squeeze()
                 # Prediction summed in R channel
+                print(image_np.shape)
                 image_np[:, :, -1] = np.where(pred_np == 255, pred_np,
                                                 image_np[:, :, -1])
                 # Ground truth summed in G channel
@@ -174,7 +178,7 @@ def main(args):
                                                 image_np[:, :, 1])
 
                 head, tail = os.path.splitext(os.path.basename(filename))
-                bname = "{}.png".format(head)
+                bname = "{}_iou_{}.png".format(head, iou)
                 filepath = os.path.join(args.runs_dir, "images", bname)
                 ecvl.ImWrite(filepath, img_ecvl)
     d.Stop()

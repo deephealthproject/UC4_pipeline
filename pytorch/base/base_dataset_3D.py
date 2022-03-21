@@ -7,8 +7,6 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
-from scipy import ndimage
-import matplotlib.pyplot as plt
 
 class BaseDataSet3D(Dataset):
     def __init__(self, root, split, mean, std, base_size=None, augment=True, val=False,

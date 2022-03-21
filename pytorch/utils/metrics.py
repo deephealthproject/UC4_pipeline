@@ -1,11 +1,5 @@
 import numpy as np
-from sklearn.metrics import confusion_matrix
 import torch
-import torch.nn.functional as F
-import torch.nn as nn
-import segmentation_models_pytorch as smp
-
-metric_fn = smp.utils.metrics.IoU(threshold=0.5, activation="sigmoid")
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -230,12 +224,9 @@ def get_confusion_matrix(target, output):
 def eval_metrics(task, output, target, num_classes):
     if task != "classification":
         correct, labeled = batch_pix_accuracy(output, target)
-        #iou = metric_fn(output, target.unsqueeze(1)).cpu().numpy()
-        # print(iou)
-        #print(output.size(), target.size())
         iou = batch_intersection_union(output, target, num_classes)
         dice = batch_dice_coeff(output, target, threshold=0.5)
-        return [np.round(correct, 5), np.round(labeled, 5), iou, dice]
+        return [np.round(correct, 5), np.round(labeled, 5), 0, 0, 0, 0, iou, dice]
     else:
         output = torch.sigmoid(output)
         output = output > 0.5
@@ -243,7 +234,7 @@ def eval_metrics(task, output, target, num_classes):
         TN, FP, FN, TP = get_confusion_matrix(target.cpu().detach().numpy(), output.cpu().detach().numpy())
         correct = output.eq(target.view_as(output)).cpu().sum().item()
         labeled = target.size(0)
-        return [np.round(correct, 5), np.round(labeled, 5), TN, FP, FN, TP]
+        return [np.round(correct, 5), np.round(labeled, 5), TN, FP, FN, TP, None, None]
 
 def pixel_accuracy(output, target):
     output = np.asarray(output)

@@ -1,26 +1,18 @@
 import argparse
 import pandas as pd
-import scipy
 import os
 import numpy as np
 import json
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from pathlib import Path
 from matplotlib import cm
 from torchvision import transforms
-from scipy import ndimage
 from tqdm import tqdm
-from math import ceil
-from glob import glob
 from PIL import Image
 import dataloaders
 import models
 import pandas as pd
 from utils import losses
-from utils.metrics import _threshold, eval_metrics, AverageMeter
-import segmentation_models_pytorch as smp
+from utils.metrics import eval_metrics
 import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
@@ -197,7 +189,6 @@ def main():
     #         seg_metrics = eval_metrics(output, target, num_classes)
     #         #print(output.size())
     #         #print(target.size())
-    #         #print(iou_smp)
     #         total_correct += seg_metrics[0]
     #         total_label += seg_metrics[1]
     #         total_iou.append(seg_metrics[2])

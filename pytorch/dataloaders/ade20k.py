@@ -2,12 +2,8 @@ from base import BaseDataSet, BaseDataLoader
 from utils import palette
 import numpy as np
 import os
-import torch
-import cv2
 from PIL import Image
 from glob import glob
-from torch.utils.data import Dataset
-from torchvision import transforms
 
 
 class ADE20KDataset(BaseDataSet):

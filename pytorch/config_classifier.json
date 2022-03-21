@@ -21,9 +21,10 @@
     "train_loader": {
         "type": "MolinetteLungsClassificationLoader",
         "args":{
-            "data_dir": "/data/deephealth/deephealth-uc4/data/processed/unitochest/train",
+            "data_dir": "/data/deephealth/deephealth-uc4/data/processed/unitochest/training",
             "mean" : [0.3405],
             "std" : [0.3604],
+            "black_masks": 0.1,
             "batch_size": 128,
             "augment": true,
             "base_size": 512,
@@ -33,7 +34,7 @@
             "flip": true,
             "rotate": true,
             "blur": false,
-            "split": "train",
+            "split": "training",
             "num_workers": 32
         }
     },
@@ -41,9 +42,10 @@
     "val_loader": {
         "type": "MolinetteLungsClassificationLoader",
         "args":{
-            "data_dir": "/data/deephealth/deephealth-uc4/data/processed/unitochest/val",
+            "data_dir": "/data/deephealth/deephealth-uc4/data/processed/unitochest/validation",
             "mean" : [0.3405],
             "std" : [0.3604],
+            "black_masks": 0.1,
             "batch_size": 512,
             "augment": true,
             "base_size": 512,
@@ -53,7 +55,7 @@
             "flip": false,
             "rotate": false,
             "blur": false,
-            "split": "val",
+            "split": "validation",
             "num_workers": 32
         }
     },
@@ -64,6 +66,7 @@
             "data_dir": "/data/deephealth/deephealth-uc4/data/processed/unitochest/test",
             "mean" : [0.3405],
             "std" : [0.3604],
+            "black_masks": 0.1,
             "batch_size": 512,
             "augment": true,
             "base_size": 512,

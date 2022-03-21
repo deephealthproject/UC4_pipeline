@@ -1,17 +1,9 @@
 
 import numpy as np
 import os
-from scipy import ndimage
-import torch
-import cv2
-from tqdm import tqdm
 from PIL import Image
-from glob import glob
 from base import BaseDataSet, BaseDataLoader
 from utils import palette
-from pathlib import Path
-from torch.utils.data import Dataset
-from torchvision import transforms
 
 def is_nan(x):
     return (x != x)
@@ -25,7 +17,7 @@ class MolinetteLungsDataset(BaseDataSet):
     def _set_files(self):
         
         self.image_dir = os.path.join(self.root, 'images')#, self.split)
-        self.label_dir = os.path.join(self.root, 'masks')#, self.split)
+        self.label_dir = os.path.join(self.root, 'ground_truth')#, self.split)
         #self.dataframe['mask'] = self.dataframe['mask'].fillna(os.path.join(self.root, 'black_mask.png'))
         self.dataframe['image'] = self.dataframe['image'].apply(lambda x: os.path.join(self.image_dir, x))
         self.dataframe['mask'] = self.dataframe['mask'].apply(lambda x: x if is_nan(x) else os.path.join(self.label_dir, x))
@@ -53,11 +45,12 @@ class MolinetteLungsDataset(BaseDataSet):
         return len(self.images_paths)
 
 class MolinetteLungsLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, split, mean=[0], std=[1], crop_size=None, base_size=None, scale=True, num_workers=1, val=False,
+    def __init__(self, data_dir, batch_size, split, mean=[0], std=[1], black_masks=0, crop_size=None, base_size=None, scale=True, num_workers=1, val=False,
                     shuffle=False, flip=False, rotate=False, blur= False, augment=False, val_split= None, return_id=False):
 
         self.MEAN = mean
         self.STD = std
+        self.black_masks = black_masks
 
         print((self.MEAN, self.STD))
 
@@ -66,6 +59,7 @@ class MolinetteLungsLoader(BaseDataLoader):
             'split': split,
             'mean': self.MEAN,
             'std': self.STD,
+            'black_masks': self.black_masks,
             'augment': augment,
             'crop_size': crop_size,
             'base_size': base_size,

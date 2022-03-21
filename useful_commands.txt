@@ -1,0 +1,27 @@
+# Build docker
+sudo docker build  -t riccardorenzulli/deephealth-uc4:cudnn . -f Dockerfile_eddl
+
+# Push docker
+sudo docker push riccardorenzulli/deephealth-uc4:cudnn
+
+# Create volume
+kubectl apply -f eddl/volume-unitochest.yaml
+
+# Attach sleep pod to volume
+kubectl apply -f eddl/pod-sleep-unitochest.yaml
+
+#Download data from eidos-service to volume 
+kubectl apply -f eddl/pod-sleep-unitochest.yaml
+open terminal in pod 
+    apt install openssh-server
+    ssh-keygen -t rsa
+    Add key to /home/eidos/.ssh/authorized_keys
+    mkdir -p /data/deephealth/deephealth-uc4/data/raw/
+    rsync -vrp --ignore-existing eidos@eidos-service.di.unito.it:/data/exports/sshfs/deephealth/deephealth-uc4/data/raw/unitochest /data/deephealth/deephealth-uc4/data/raw/
+
+#Copy data from local to volume
+kubectl apply -f eddl/pod-sleep-unitochest.yaml
+kubectl cp kubecp/unitochest_noblackmasks sleep-unitochest:/data/deephealth/deephealth-uc4/data/eddl/processed/
+
+# Start training
+kubectl apply -f eddl/pod-deephealth-uc4-training-4gpu.yaml

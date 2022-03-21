@@ -3,10 +3,10 @@ import logging
 import json
 import math
 import torch
+import time
+import wandb
 import datetime
-from torch.utils import tensorboard
 from utils import helpers
-from utils import logger
 import utils.lr_scheduler
 from utils.sync_batchnorm import convert_model
 from utils.sync_batchnorm import DataParallelWithCallback
@@ -17,7 +17,7 @@ def get_instance(module, name, config, *args):
     return getattr(module, config[name]['type'])(*args, **config[name]['args'])
 
 class BaseTrainer:
-    def __init__(self, model, loss, resume, config, train_loader, val_loader=None, test_loader=None, train_logger=None):
+    def __init__(self, model, loss, resume, wb_run_path, config, train_loader, val_loader=None, test_loader=None, train_logger=None):
         self.model = model
         self.loss = loss
         self.config = config
@@ -86,10 +86,7 @@ class BaseTrainer:
         with open(config_save_path, 'w') as handle:
             json.dump(self.config, handle, indent=4, sort_keys=True)
 
-        writer_dir = os.path.join(cfg_trainer['log_dir'], self.config['name'], start_time)
-        self.writer = tensorboard.SummaryWriter(writer_dir)
-
-        if resume: self._resume_checkpoint(resume)
+        if resume: self._resume_checkpoint(resume, wb_run_path)
 
     def _get_available_devices(self, n_gpu):
         sys_gpu = torch.cuda.device_count()
@@ -108,17 +105,26 @@ class BaseTrainer:
     
     def train(self):
         for epoch in range(self.start_epoch, self.epochs+1):
-            # RUN TRAIN, VAL AND TEST 
+            # RUN TRAIN, VAL AND TEST
+            start_training_time = time.time() 
             results = self._train_epoch(epoch)
+            training_time = time.time() - start_training_time
+            wandb.log({"train-time": training_time}, commit=False)
             if self.do_validation and epoch % self.config['trainer']['val_per_epochs'] == 0:
                 # LOGGING INFO VALIDATION
+                start_validation_time = time.time() 
                 results = self._valid_epoch(epoch)
+                validation_time = time.time() - start_validation_time
+                wandb.log({"validation-time": validation_time}, commit=False)
                 self.logger.info(f'\n         ## Validation info for epoch {epoch} ## ')
                 for k, v in results.items():
                     self.logger.info(f'         {str(k):15s}: {v}')
 
                 # LOGGING INFO TEST
+                start_test_time = time.time()
                 test_results = self._test_epoch(epoch)
+                test_time = time.time() - start_test_time
+                wandb.log({"test-time": test_time}, commit=True)
                 self.logger.info(f'\n         ## Test info for epoch {epoch} ## ')
                 for k, v in test_results.items():
                     self.logger.info(f'         {str(k):15s}: {v}')
@@ -153,28 +159,39 @@ class BaseTrainer:
                 self._save_checkpoint(epoch, save_best=self.improved)
 
     def _save_checkpoint(self, epoch, save_best=False):
+        # state = {
+        #     'arch': type(self.model).__name__,
+        #     'epoch': epoch,
+        #     'state_dict': self.model.state_dict(),
+        #     'optimizer': self.optimizer.state_dict(),
+        #     'lr_scheduler': self.lr_scheduler.state_dict(),
+        #     'monitor_best': self.mnt_best,
+        #     'config': self.config
+        # }
         state = {
             'arch': type(self.model).__name__,
             'epoch': epoch,
             'state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
-            'lr_scheduler': self.lr_scheduler.state_dict(),
             'monitor_best': self.mnt_best,
             'config': self.config
         }
 
         if save_best:
-            filename = os.path.join(self.checkpoint_dir, f'best_model{epoch}.pth')
+            filename = os.path.join(self.checkpoint_dir, 'model_best.pth')
             torch.save(state, filename)
-            self.logger.info("Saving current best: best_model{}.pth".format(epoch))
+            self.logger.info("Saving current best: model_best.pth".format(epoch))
+            wandb.save(filename, policy="now")
         else:
             filename = os.path.join(self.checkpoint_dir, f'checkpoint-epoch{epoch}.pth')
             self.logger.info(f'\nSaving a checkpoint: {filename} ...') 
             torch.save(state, filename)
+            wandb.save(filename, policy="now")
 
-    def _resume_checkpoint(self, resume_path):
+    def _resume_checkpoint(self, resume_path, wb_run_path):
+        self.logger.info(f'W&B run : {wb_run_path}')
         self.logger.info(f'Loading checkpoint : {resume_path}')
-        checkpoint = torch.load(resume_path)
+        #checkpoint = torch.load(resume_path)
+        checkpoint = wandb.restore(resume_path, run_path=wb_run_path)
 
         # Load last run info, the model params, the optimizer and the loggers
         self.start_epoch = checkpoint['epoch'] + 1

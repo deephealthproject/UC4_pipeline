@@ -10,7 +10,7 @@ def convert_dicoms(input_path, output_path, df_path):
     df["image"] = df["image"].str.replace('.dcm','.png')
 
     # Copy masks
-    shutil.copytree(os.path.join(input_path, 'masks'),os.path.join(output_path, 'masks'))
+    shutil.copytree(os.path.join(input_path, 'ground_truth'),os.path.join(output_path, 'ground_truth'))
     # Dicom to png
     for path in Path(input_path).rglob('*.dcm'):
         new_path = str(path).replace(input_path, output_path)
@@ -21,7 +21,7 @@ def convert_dicoms(input_path, output_path, df_path):
     df.to_csv(os.path.join(output_path, df_path), index=False)
 
 def main(args):
-    splits = ["train", "val", "test"]
+    splits = ["training", "validation", "test"]
 
     for split in splits: 
         convert_dicoms(os.path.join(args.input_path, split), os.path.join(args.output_path, split), "{}_dataset.csv".format(split))
