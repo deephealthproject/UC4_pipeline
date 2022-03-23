@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: deephealth-uc4-pytorch-test-noblackmasks
+spec:
+ restartPolicy: Never
+ containers:
+ - name: deephealth-uc4
+   image: riccardorenzulli/deephealth-uc4:pytorch
+   command: ["bash", "-c"]
+   args: ["cd UC4_pipeline/pytorch/; python3 test.py --config config_noblackmasks.json --model saved/UNet2D/nopretrained_blackmasks/03-21_11-12/model_best.pth  --wb_run_path eidoslab/deephealth-uc4/677c9wvh --data /data/deephealth/deephealth-uc4/data/pytorch/processed/unitochest/test --output /data/deephealth/deephealth-uc4/data/pytorch/output/unitochest/test"]
+   volumeMounts:
+          - name: download
+            mountPath: /data
+          - name: shm
+            mountPath: /dev/shm
+   env:
+    - name: WANDB_BASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: perlo-wandb-auth
+          key: host
+    - name: WANDB_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: perlo-wandb-auth
+          key: key
+    - name: PYTHONUNBUFFERED
+      value: "0"
+   resources:
+     limits:
+       nvidia.com/gpu: 1
+     requests:
+       nvidia.com/gpu: 1
+ volumes:
+      - name: download
+        persistentVolumeClaim:
+          claimName: unitochest
+      - name: shm
+        emptyDir:
+          medium: Memory

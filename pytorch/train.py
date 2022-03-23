@@ -29,6 +29,7 @@ def get_instance(module, name, config, *args):
     return getattr(module, config[name]['type'])(*args, **config[name]['args'])
 
 def main(config, resume, wb_run_path):
+    wandb.config.update(config)
     set_seed(config["seed"])
     train_logger = Logger()
 
@@ -42,6 +43,7 @@ def main(config, resume, wb_run_path):
         model = get_instance(models, 'arch', config)
     else:
         model = get_instance(models, 'arch', config, config['num_classes'], config['in_channels'])
+    wandb.watch(model, log="all")
     availble_gpus = list(range(torch.cuda.device_count()))
     print(availble_gpus)
     if resume is not None:
