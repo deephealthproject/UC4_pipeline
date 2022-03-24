@@ -81,10 +81,9 @@ def main(args):
     # Dataloader arguments [training,validation,test] 
     augs = [training_augs,validation_augs,validation_augs]
 
-    # this yml describes splits in [test,training,validation] order
-    # yml_order = [2,0,1]
-    # augs = [augs[i] for i in yml_order]
-    # drop_last = [drop_last[i] for i in yml_order]
+    #this yml describes splits in [training,test,validation] order
+    yml_order = [0,2,1]
+    augs = [augs[i] for i in yml_order]
     dataset_augs = ecvl.DatasetAugmentations(augs)
 
     print("Reading dataset")
@@ -94,20 +93,16 @@ def main(args):
                        ctype=ecvl.ColorType.GRAY, 
                        ctype_gt=ecvl.ColorType.GRAY, 
                        num_workers=num_workers,
-                       queue_ratio_size=queue_ratio_size)
-    x = Tensor([args.batch_size, d.n_channels_, size[0], size[1]])
-    y = Tensor([args.batch_size, d.n_channels_gt_, size[0], size[1]])
-    num_samples_train = len(d.GetSplit())
-    num_batches_train = num_samples_train // args.batch_size
-    d.SetSplit(ecvl.SplitType.validation)
-    num_samples_validation = len(d.GetSplit())
-    num_batches_validation = num_samples_validation // args.batch_size
-    d.SetSplit(ecvl.SplitType.test)
-    num_samples_test = len(d.GetSplit())
-    num_batches_test = num_samples_test // args.batch_size
+                       queue_ratio_size=queue_ratio_size,
+                       drop_last={'training': True, 'validation': False, 'test': False})
+    num_batches_train = d.GetNumBatches(ecvl.SplitType.training)
+    num_batches_validation = d.GetNumBatches(ecvl.SplitType.validation)
+    num_batches_test = d.GetNumBatches(ecvl.SplitType.test)
     indices = list(range(args.batch_size))
 
     iou_evaluator = utils.Evaluator()
+    loss_evaluator = utils.Evaluator()
+    dice_evaluator = utils.Evaluator()
     print("Starting training")
     for e in range(args.epochs):
         # TRAINING
@@ -115,10 +110,7 @@ def main(args):
               flush=True)
         d.SetSplit(ecvl.SplitType.training)
         eddl.reset_loss(net)
-        s = d.GetSplit()
-        random.shuffle(s)
-        #d.split_.training_ = s
-        d.ResetAllBatches(shuffle=True)
+        d.ResetBatch(d.current_split_, True)
         start_time = time.time()
         # Spawn the threads
         d.Start()
@@ -152,9 +144,7 @@ def main(args):
         # Reset current split without shuffling
         d.ResetBatch(d.current_split_, False)
         iou_evaluator.ResetEval()
-        loss_evaluator = utils.Evaluator()
         loss_evaluator.ResetEval()
-        dice_evaluator = utils.Evaluator()
         dice_evaluator.ResetEval()
         print("Epoch %d/%d - Evaluation" % (e, args.epochs), flush=True)
         start_time = time.time()
@@ -204,9 +194,7 @@ def main(args):
             # Reset current split without shuffling
             d.ResetBatch(d.current_split_, False)
             iou_evaluator.ResetEval()
-            loss_evaluator = utils.Evaluator()
             loss_evaluator.ResetEval()
-            dice_evaluator = utils.Evaluator()
             dice_evaluator.ResetEval()
             print("Epoch %d/%d - Test" % (e, args.epochs), flush=True)
             start_time = time.time()

@@ -1,0 +1,14 @@
+FROM dhealth/pylibs-toolkit:1.2.0-1-cudnn
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update
+RUN apt-get install locales unzip texlive-full -y
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+ENV LANG en_US.UTF-8  
+ENV LANGUAGE en_US:en  
+ENV LC_ALL en_US.UTF-8 
+RUN pip install gdown pandas wandb zipfile38 numpy scipy opencv-python tqdm scikit-learn pydicom pypng pillow
+RUN mkdir UC4_pipeline
+COPY . UC4_pipeline/
+

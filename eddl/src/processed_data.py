@@ -1,6 +1,3 @@
-
-# ATTENTION!
-# USE FROM dhealth/pylibs-toolkit:0.10.0-cudnn TO CREATE THE YAML FILE!!!!
 import os
 import argparse
 import shutil
@@ -31,15 +28,8 @@ def convert_dicoms(split, input_path, output_path, df_path):
         image_noextension = path.split(".")[0]
         print("{}_mask.png".format(image_noextension))
         if not "{}_mask.png".format(image_noextension) in df["mask"].tolist():
-            print("not present")
-            print(df["mask"].iloc[0])
             black_mask.save(os.path.join(output_path, 'ground_truth', "{}_mask.png".format(image_noextension)))
-        else:
-            print("present")
         dicom_to_png(full_path, new_path, windowing=True, segment=False)
-
-    #df["image"] = df["image"].str.replace('.dcm','.png')
-    #df.to_csv(os.path.join(output_path, df_path), index=False)
 
 def main(args):
     splits = ["validation", "test", "training"]
@@ -66,4 +56,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main(args)
 
-    #find /data/deephealth/deephealth-uc4/data/processed/unitochest/validation/ground_truth/ -type f | wc -l
+    #find /data/deephealth/deephealth-uc4/data/eddl/processed/unitochest_98/test/ground_truth/ -type f | wc -l

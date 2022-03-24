@@ -6,7 +6,7 @@ spec:
  restartPolicy: Never
  containers:
  - name: sleep
-   image: riccardorenzulli/deephealth-uc4:cudnn
+   image: riccardorenzulli/deephealth-uc4:pyecvl-pyeddl
    command: ["/bin/bash", "-c", "--"]
    args: ["while true; do sleep 30; done;"]
    volumeMounts:

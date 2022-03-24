@@ -89,8 +89,10 @@ def main(args):
         ecvl.AugToFloat32(255, divisor_gt=255),
         ecvl.AugNormalize(mean, std),
     ])
-    dataset_augs = ecvl.DatasetAugmentations([None, None, test_augs])
-
+    dataset_augs = ecvl.DatasetAugmentations([None, test_augs, test_augs])
+    #this yml describes splits in [training,test,validation] order
+    yml_order = [0,2,1]
+    augs = [augs[i] for i in yml_order]
     print("Reading dataset")
     d = ecvl.DLDataset(args.dataset, 
                        args.batch_size, 
@@ -98,15 +100,13 @@ def main(args):
                        ctype=ecvl.ColorType.GRAY, 
                        ctype_gt=ecvl.ColorType.GRAY, 
                        num_workers=num_workers,
-                       queue_ratio_size=queue_ratio_size)
-    x = Tensor([args.batch_size, d.n_channels_, size[0], size[1]])
-    y = Tensor([args.batch_size, d.n_channels_gt_, size[0], size[1]])
+                       queue_ratio_size=queue_ratio_size,
+                       drop_last={'training': True, 'validation': False, 'test': False})
     
     print("Testing started!")
     d.SetSplit(ecvl.SplitType.test)
     d.ResetBatch(d.current_split_, False)
-    num_samples_test = len(d.GetSplit())
-    num_batches_test = num_samples_test // args.batch_size
+    num_batches_test = d.GetNumBatches(ecvl.SplitType.test)
 
     iou_evaluator = utils.Evaluator()
     iou_evaluator.ResetEval()
@@ -170,7 +170,6 @@ def main(args):
                 pred_np = pred_np.squeeze()
                 gt_np = gt_np.squeeze()
                 # Prediction summed in R channel
-                print(image_np.shape)
                 image_np[:, :, -1] = np.where(pred_np == 255, pred_np,
                                                 image_np[:, :, -1])
                 # Ground truth summed in G channel

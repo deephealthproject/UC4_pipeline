@@ -6,7 +6,7 @@ spec:
  restartPolicy: Never
  containers:
  - name: deephealth-uc4
-   image: riccardorenzulli/deephealth-uc4:cudnn
+   image: riccardorenzulli/deephealth-uc4:pyecvl-pyeddl
    command: ["bash", "-c"]
    args: ["cd deephealth-uc4-pyecvl/; python3 train_model_sweep.py --dataset ../data/dataset_molinette20210418/dataset_molinette.yml --epochs 1 --batch-size 6 --gpu 1 1"]
    volumeMounts:

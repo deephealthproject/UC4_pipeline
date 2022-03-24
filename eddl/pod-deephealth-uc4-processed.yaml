@@ -6,7 +6,7 @@ spec:
  restartPolicy: Never
  containers:
  - name: deephealth-uc4
-   image: riccardorenzulli/deephealth-uc4:eddl-dataset
+   image: riccardorenzulli/deephealth-uc4:pyecvl-pyeddl
    command: ["bash", "-c"]
    args: ["cd UC4_pipeline/eddl/src; python3 processed_data.py --input_path /data/deephealth/deephealth-uc4/data/interim/unitochest --output_path /data/deephealth/deephealth-uc4/data/eddl/processed/unitochest_noblackmasks"]
    volumeMounts:
@@ -23,11 +23,6 @@ spec:
         secretKeyRef:
           name: perlo-wandb-auth
           key: key
-   resources:
-     limits:
-       nvidia.com/gpu: 1
-     requests:
-       nvidia.com/gpu: 1
  volumes:
       - name: download
         persistentVolumeClaim:

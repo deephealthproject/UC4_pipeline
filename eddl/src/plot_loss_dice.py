@@ -29,5 +29,5 @@ plt.ylabel("Dice loss")
 plt.xlabel("Epoch")
 plt.title("Dice loss for U-Net model with PyECVL and PyEDDL")
 plt.legend(facecolor="white")
-plt.savefig("../figures/dice_loss.pdf")
+plt.savefig("/data/deephealth/deephealth-uc4/data/eddl/figures/dice_loss.pdf")
 
